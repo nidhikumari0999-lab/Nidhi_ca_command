@@ -1,0 +1,10 @@
+{
+  "name": "nidhi-ca-command-center-v3",
+  "version": "3.0.0",
+  "description": "Nidhi CA Final + Trading Command Center — Full System",
+  "author": "Nidhi",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": { "start": "electron ." },
+  "devDependencies": { "electron": "^28.0.0" }
+}
