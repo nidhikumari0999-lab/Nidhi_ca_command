@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CA Final IDT — Self Review Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+  :root {
+    --bg:#0d0f14; --surface:#141720; --surface2:#1c2030; --border:#252a3a;
+    --gst:#f0a500; --cust:#3ecfcf;
+    --done:#22c55e; --pending:#ef4444; --partial:#f59e0b;
+    --text:#e2e8f0; --muted:#64748b; --dim:#94a3b8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;padding:18px 13px 80px;min-height:100vh;}
+
+  /* HEADER */
+  .hdr{text-align:center;margin-bottom:24px;}
+  .hdr-sub{font-size:10px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+  .hdr h1{font-family:'Syne',sans-serif;font-size:clamp(19px,5vw,32px);font-weight:800;color:#fff;}
+  .hdr h1 .g{color:var(--gst);} .hdr h1 .c{color:var(--cust);}
+  .hdr-line{width:65px;height:3px;background:linear-gradient(90deg,var(--gst),var(--cust));margin:11px auto 0;border-radius:2px;}
+
+  /* TOP BAR */
+  .topbar{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;}
+  .topbar button{font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--dim);transition:all .15s;}
+  .topbar button:hover{background:var(--surface);color:#fff;border-color:#3a4060;}
+  .btn-save{background:#22c55e18!important;color:var(--done)!important;border-color:#22c55e40!important;}
+  .btn-reset{background:#ef444418!important;color:#f87171!important;border-color:#ef444440!important;}
+
+  /* PROGRESS */
+  .prog-wrap{max-width:660px;margin:0 auto 24px;}
+  .prog-top{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px;}
+  .prog-track{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gst),var(--cust));transition:width .35s;}
+
+  /* SECTION */
+  .sec-hd{display:flex;align-items:center;gap:9px;margin:26px 0 12px;}
+  .sec-badge{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
+  .b-gst{background:#f0a50018;color:var(--gst);border:1px solid #f0a50045;}
+  .b-cust{background:#3ecfcf18;color:var(--cust);border:1px solid #3ecfcf45;}
+  .sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff;}
+  .sec-marks{margin-left:auto;font-size:10px;color:var(--muted);background:var(--surface2);padding:3px 9px;border-radius:4px;border:1px solid var(--border);}
+
+  /* CARD */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:9px;overflow:hidden;}
+  .card.gst-c{border-left:3px solid var(--gst);}
+  .card.cust-c{border-left:3px solid var(--cust);}
+
+  /* CARD HEAD */
+  .card-hd{display:flex;align-items:center;gap:9px;padding:10px 13px;cursor:pointer;user-select:none;}
+  .card-hd:hover{background:#ffffff06;}
+  .ch-num{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);min-width:40px;}
+  .ch-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:#fff;flex:1;}
+  .hd-dots{display:flex;gap:3px;}
+  .hd-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0;}
+  .ch-arrow{font-size:11px;color:var(--muted);transition:transform .18s;margin-left:4px;}
+  .card.open .ch-arrow{transform:rotate(180deg);}
+
+  /* BODY */
+  .card-body{display:none;border-top:1px solid var(--border);}
+  .card.open .card-body{display:block;}
+
+  /* FIELDS */
+  .fields-grid{display:grid;grid-template-columns:1fr 1fr;}
+  .field-cell{padding:9px 13px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .field-cell:nth-child(even){border-right:none;}
+  .field-cell:nth-last-child(-n+2){border-bottom:none;}
+  .f-lbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+
+  /* SELECT */
+  select{width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:5px 24px 5px 7px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;}
+  select:focus{border-color:#3a4060;}
+  select.val-done{border-color:#22c55e55;color:var(--done);}
+  select.val-partial{border-color:#f59e0b55;color:var(--partial);}
+  select.val-pending{border-color:#ef444455;color:#f87171;}
+  select.val-na{color:var(--muted);}
+
+  /* NOTES */
+  .notes-wrap{padding:9px 13px;background:var(--surface2);border-top:1px solid var(--border);}
+  .notes-lbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+  textarea{width:100%;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:11px;padding:6px 8px;resize:vertical;min-height:48px;outline:none;line-height:1.5;}
+  textarea:focus{border-color:#3a4060;color:var(--text);}
+  textarea::placeholder{color:#3a4060;}
+
+  /* SUMMARY */
+  .summary{max-width:660px;margin:32px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px 18px;}
+  .sum-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;margin-bottom:12px;}
+  .sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .sum-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+  .sum-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+  .sum-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+  .s-done .sum-num{color:var(--done);}
+  .s-partial .sum-num{color:var(--partial);}
+  .s-pending .sum-num{color:#f87171;}
+  .save-hint{text-align:center;font-size:10px;color:var(--muted);margin-top:12px;}
+
+  @media(max-width:460px){
+    .fields-grid{grid-template-columns:1fr;}
+    .field-cell{border-right:none;}
+    .field-cell:nth-last-child(-n+2){border-bottom:1px solid var(--border);}
+    .field-cell:last-child{border-bottom:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-sub">CA Final · May 2026 · Self Review Tracker</div>
+  <h1>IDT <span class="g">GST</span> + <span class="c">Customs</span></h1>
+  <div class="hdr-line"></div>
+</div>
+
+<div class="topbar">
+  <button class="btn-save" onclick="saveAll()">💾 Save Progress</button>
+  <button onclick="expandAll()">↕ Expand All</button>
+  <button onclick="collapseAll()">↕ Collapse All</button>
+  <button class="btn-reset" onclick="resetAll()">🗑 Reset All</button>
+</div>
+
+<div class="prog-wrap">
+  <div class="prog-top">
+    <span>Fields Filled</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<div class="sec-hd">
+  <div class="sec-badge b-gst">Part A</div>
+  <div class="sec-title">GST</div>
+  <div class="sec-marks">~80 Marks</div>
+</div>
+<div id="gst-wrap"></div>
+
+<div class="sec-hd">
+  <div class="sec-badge b-cust">Part B</div>
+  <div class="sec-title">Customs</div>
+  <div class="sec-marks">16–20 Marks</div>
+</div>
+<div id="cust-wrap"></div>
+
+<div class="summary">
+  <div class="sum-title">📊 Status Summary</div>
+  <div class="sum-grid">
+    <div class="sum-box s-done"><div class="sum-num" id="cnt-done">0</div><div class="sum-lbl">Chapters Done</div></div>
+    <div class="sum-box s-partial"><div class="sum-num" id="cnt-partial">0</div><div class="sum-lbl">Partial</div></div>
+    <div class="sum-box s-pending"><div class="sum-num" id="cnt-pending">0</div><div class="sum-lbl">Pending</div></div>
+  </div>
+  <div class="save-hint">Data saves automatically in your browser · Click 💾 to confirm</div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const CHAPTERS = {
+  gst: [
+    {id:'G1A',  num:'1A',  name:'GST in India — An Introduction'},
+    {id:'G1B',  num:'1B',  name:'Important Terms'},
+    {id:'G1C',  num:'1C',  name:'Supply under GST'},
+    {id:'G1D',  num:'1D',  name:'Composite and Mixed Supply'},
+    {id:'G2A',  num:'2A',  name:'Charge of GST'},
+    {id:'G2B',  num:'2B',  name:'Composition Levy'},
+    {id:'G3',   num:'3',   name:'Registration'},
+    {id:'G4',   num:'4',   name:'Tax Invoice, Credit & Debit Notes'},
+    {id:'G5',   num:'5',   name:'Time of Supply'},
+    {id:'G6',   num:'6',   name:'Value of Supply'},
+    {id:'G7',   num:'7',   name:'Place of Supply'},
+    {id:'G8',   num:'8',   name:'Exemption from GST'},
+    {id:'G9A',  num:'9A',  name:'Input Tax Credit'},
+    {id:'G9B',  num:'9B',  name:'Input Service Distributor'},
+    {id:'G10A', num:'10A', name:'Payment of Tax'},
+    {id:'G10B', num:'10B', name:'TDS under GST'},
+    {id:'G11',  num:'11',  name:'E-commerce & TCS'},
+    {id:'G12A', num:'12A', name:'Accounts and Records'},
+    {id:'G12B', num:'12B', name:'E-way Bill'},
+    {id:'G13',  num:'13',  name:'Returns under GST'},
+    {id:'G14',  num:'14',  name:'Job Work'},
+    {id:'G15',  num:'15',  name:'Assessment and Audit'},
+    {id:'G16',  num:'16',  name:'Inspection, Search, Seizure & Arrest'},
+    {id:'G17',  num:'17',  name:'Demands and Recovery'},
+    {id:'G18',  num:'18',  name:'Liability to Pay in Certain Cases'},
+    {id:'G19',  num:'19',  name:'Offences and Penalties'},
+    {id:'G20',  num:'20',  name:'Appeals and Revision'},
+    {id:'G21',  num:'21',  name:'Advance Ruling'},
+    {id:'G22A', num:'22A', name:'Imports under GST'},
+    {id:'G22B', num:'22B', name:'Exports under GST'},
+    {id:'G23',  num:'23',  name:'Refunds under GST'},
+    {id:'G24',  num:'24',  name:'Miscellaneous Provisions'},
+    {id:'G25',  num:'25',  name:'Ethical Aspects under GST'},
+  ],
+  cust: [
+    {id:'C1',  num:'1',  name:'Important Terms (1A / 1B / 1C)'},
+    {id:'C2',  num:'2',  name:'Levy and Exemption'},
+    {id:'C3',  num:'3',  name:'Importation & Exportation of Goods'},
+    {id:'C4',  num:'4',  name:'Transit and Transhipment'},
+    {id:'C5',  num:'5',  name:'Classification of Goods'},
+    {id:'C6',  num:'6',  name:'Types of Duty'},
+    {id:'C7',  num:'7',  name:'Valuation under Customs Act, 1962'},
+    {id:'C8',  num:'8',  name:'Post Articles / Stores'},
+    {id:'C9',  num:'9',  name:'Baggage'},
+    {id:'C10', num:'10', name:'Warehousing'},
+    {id:'C11', num:'11', name:'Refund'},
+    {id:'C12', num:'12', name:'Foreign Trade Policy'},
+  ]
+};
+
+const FIELDS = [
+  {
+    key:'concepts', label:'Key Concepts',
+    opts:[
+      {v:'',       l:'— Select —',    c:''},
+      {v:'done',   l:'✅ Covered',     c:'val-done'},
+      {v:'partial',l:'⚡ Partial',     c:'val-partial'},
+      {v:'pending',l:'❌ Not Covered', c:'val-pending'},
+    ]
+  },
+  {
+    key:'clarity', label:'Clarity',
+    opts:[
+      {v:'',       l:'— Select —',    c:''},
+      {v:'clear',  l:'✅ Clear',       c:'val-done'},
+      {v:'doubt',  l:'⚡ Some Doubts', c:'val-partial'},
+      {v:'unclear',l:'❌ Not Clear',   c:'val-pending'},
+    ]
+  },
+  {
+    key:'revision', label:'Revision',
+    opts:[
+      {v:'',       l:'— Select —',  c:''},
+      {v:'done',   l:'✅ Done',      c:'val-done'},
+      {v:'needed', l:'⚡ Needed',    c:'val-partial'},
+      {v:'pending',l:'❌ Pending',   c:'val-pending'},
+    ]
+  },
+  {
+    key:'qprac', label:'Q Practice',
+    opts:[
+      {v:'',       l:'— Select —',  c:''},
+      {v:'done',   l:'✅ Done',      c:'val-done'},
+      {v:'partial',l:'⚡ Partial',   c:'val-partial'},
+      {v:'pending',l:'❌ Pending',   c:'val-pending'},
+      {v:'na',     l:'— N/A —',     c:'val-na'},
+    ]
+  }
+];
+
+const DOT_MAP = {
+  done:'#22c55e', clear:'#22c55e',
+  partial:'#f59e0b', doubt:'#f59e0b', needed:'#f59e0b',
+  pending:'#ef4444', unclear:'#ef4444',
+  na:'#64748b', '':'#252a3a'
+};
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+const KEY = (id,f) => `idt2_${id}_${f}`;
+const load = (id,f) => localStorage.getItem(KEY(id,f)) || '';
+const save = (id,f,v) => localStorage.setItem(KEY(id,f), v);
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(chapters, wrapId, cardClass) {
+  const wrap = document.getElementById(wrapId);
+  chapters.forEach(ch => {
+    const div = document.createElement('div');
+    div.className = `card ${cardClass}`;
+    div.id = `card_${ch.id}`;
+
+    // header dots HTML
+    const dotsHtml = FIELDS.map(f =>
+      `<div class="hd-dot" id="dot_${ch.id}_${f.key}"></div>`
+    ).join('');
+
+    // fields HTML
+    const fieldsHtml = FIELDS.map(f => {
+      const saved = load(ch.id, f.key);
+      const optsHtml = f.opts.map(o =>
+        `<option value="${o.v}" data-cls="${o.c}" ${saved===o.v?'selected':''}>${o.l}</option>`
+      ).join('');
+      return `
+        <div class="field-cell">
+          <div class="f-lbl">${f.label}</div>
+          <select id="sel_${ch.id}_${f.key}"
+            onchange="onChange(this,'${ch.id}','${f.key}')">
+            ${optsHtml}
+          </select>
+        </div>`;
+    }).join('');
+
+    const savedNote = load(ch.id,'notes');
+
+    div.innerHTML = `
+      <div class="card-hd" onclick="toggleCard('${ch.id}')">
+        <div class="ch-num">Ch ${ch.num}</div>
+        <div class="ch-name">${ch.name}</div>
+        <div class="hd-dots">${dotsHtml}</div>
+        <div class="ch-arrow">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="fields-grid">${fieldsHtml}</div>
+        <div class="notes-wrap">
+          <div class="notes-lbl">Notes / Weak Points / To-Do</div>
+          <textarea id="ta_${ch.id}"
+            placeholder="Write specific topics, doubts, page refs, pending sums..."
+            oninput="save('${ch.id}','notes',this.value)">${savedNote}</textarea>
+        </div>
+      </div>`;
+    wrap.appendChild(div);
+
+    // Apply saved styles
+    FIELDS.forEach(f => {
+      styleSelect(document.getElementById(`sel_${ch.id}_${f.key}`));
+      paintDot(ch.id, f.key);
+    });
+  });
+}
+
+function toggleCard(id) {
+  document.getElementById(`card_${id}`).classList.toggle('open');
+}
+function expandAll()  { document.querySelectorAll('.card').forEach(c=>c.classList.add('open')); }
+function collapseAll(){ document.querySelectorAll('.card').forEach(c=>c.classList.remove('open')); }
+
+function onChange(el, id, field) {
+  styleSelect(el);
+  save(id, field, el.value);
+  paintDot(id, field);
+  updateSummary();
+}
+
+function styleSelect(el) {
+  el.className = '';
+  const opt = el.options[el.selectedIndex];
+  const cls = opt ? opt.getAttribute('data-cls') : '';
+  if(cls) el.classList.add(cls);
+}
+
+function paintDot(id, field) {
+  const el = document.getElementById(`sel_${id}_${field}`);
+  const dot = document.getElementById(`dot_${id}_${field}`);
+  if(!el||!dot) return;
+  dot.style.background = DOT_MAP[el.value] || '#252a3a';
+}
+
+function updateSummary() {
+  const all = [...CHAPTERS.gst, ...CHAPTERS.cust];
+  let done=0, partial=0, pending=0, filled=0;
+  const total = all.length * FIELDS.length;
+
+  all.forEach(ch => {
+    const rev  = load(ch.id,'revision');
+    const conc = load(ch.id,'concepts');
+    if(rev==='done' && conc==='done') done++;
+    else if(rev==='needed' || conc==='partial' || rev==='done' || conc==='done') partial++;
+    else if(rev==='pending' || conc==='pending') pending++;
+
+    FIELDS.forEach(f => { if(load(ch.id,f.key)) filled++; });
+  });
+
+  document.getElementById('cnt-done').textContent    = done;
+  document.getElementById('cnt-partial').textContent  = partial;
+  document.getElementById('cnt-pending').textContent  = pending;
+  const pct = total ? Math.round((filled/total)*100) : 0;
+  document.getElementById('prog-pct').textContent = pct+'%';
+  document.getElementById('prog-fill').style.width = pct+'%';
+}
+
+function saveAll() {
+  const btn = document.querySelector('.btn-save');
+  btn.textContent='✅ Saved!';
+  setTimeout(()=>btn.textContent='💾 Save Progress',1600);
+}
+
+function resetAll() {
+  if(!confirm('Reset ALL data? This cannot be undone.')) return;
+  [...CHAPTERS.gst,...CHAPTERS.cust].forEach(ch => {
+    [...FIELDS.map(f=>f.key),'notes'].forEach(f => localStorage.removeItem(KEY(ch.id,f)));
+  });
+  location.reload();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+render(CHAPTERS.gst,  'gst-wrap',  'gst-c');
+render(CHAPTERS.cust, 'cust-wrap', 'cust-c');
+updateSummary();
+</script>
+</body>
+</html>
